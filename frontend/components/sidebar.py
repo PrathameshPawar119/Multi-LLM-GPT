@@ -1,20 +1,18 @@
 import streamlit as st
-import requests
+from components.chats import load_chats
 
-def load_chats(token):
-    headers = {"user_id": token}
-    response = requests.get("http://localhost:5000/chats", headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error("Unable to fetch chats")
-        return []
+def display_sidebar():
+    print(f"Frontend Logged in user ID: {st.session_state['user_id']}")
 
-def display_sidebar(token):
     st.sidebar.title("Chat History")
 
-    chats = load_chats(token)
-    selected_chat = st.sidebar.radio("Select a chat", options=[chat["_id"] for chat in chats])
+    if st.sidebar.button("New Chat"):
+        st.session_state["selected_chat_id"] = "new_chat"
+        st.session_state.messages = []
+        st.rerun()
 
-    if selected_chat:
-        st.session_state["selected_chat_id"] = selected_chat
+    chats = load_chats()
+    for i, chat in enumerate(chats):
+        if st.sidebar.button(f"Chat {i+1}", key=f"chat_{chat['_id']}"):
+            st.session_state["selected_chat_id"] = chat["_id"]
+            st.rerun()

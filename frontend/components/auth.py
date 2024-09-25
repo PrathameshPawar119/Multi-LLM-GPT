@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+BASE_URL = "http://localhost:5000"
 
 def login():
     st.title("Login")
@@ -9,22 +10,24 @@ def login():
 
     if st.button("Login", key="login_button"):
         response = requests.post(
-            "http://localhost:5000/login",
+            f"{BASE_URL}/login",
             json={"email": email, "password": password},
         )
+        print("Login Response ", response)
         if response.status_code == 200:
-            token = response.json()["token"]
-            st.session_state["token"] = token
+            data = response.json()
+            st.session_state["token"] = data["token"]
+            st.session_state["user_id"] = data["user_id"]
             st.session_state["logged_in"] = True
             st.success("Logged in successfully!")
+            print(f"Logged in user ID: {st.session_state['user_id']}")
+            st.rerun()
         else:
             st.error("Invalid credentials")
 
-    # Button to switch to signup page
     if st.button("Sign Up instead"):
         st.session_state["show_signup"] = True
 
-# Register Function
 def register():
     st.title("Sign Up")
     
@@ -37,17 +40,16 @@ def register():
             st.error("Passwords do not match!")
         else:
             response = requests.post(
-                "http://localhost:5000/register",
+                f"{BASE_URL}/register",
                 json={"email": email, "password": password},
             )
             if response.status_code == 201:
                 st.success("User registered successfully!")
-                st.session_state["is_registering"] = False  # Switch to login after successful registration
+                st.session_state["show_signup"] = False
             elif response.status_code == 400:
                 st.error(response.json()["message"])
             else:
                 st.error("Registration failed!")
     
-    # Button to switch to Login page
     if st.button("Login"):
-        st.session_state["is_registering"] = False
+        st.session_state["show_signup"] = False

@@ -1,47 +1,76 @@
 import streamlit as st
 import requests
 
-def load_chat_history(chat_id, token):
-    headers = {"user_id": token}
-    response = requests.get(f"http://localhost:5000/chats/{chat_id}", headers=headers)
+BASE_URL = "http://localhost:5000"
+
+
+def load_chat_history(chat_id):
+    print(f"load_chat_history Logged in user ID: {st.session_state['user_id']}")
+    payload = {"user_id": st.session_state["user_id"]}
+    response = requests.get(f"{BASE_URL}/chats/{chat_id}", json=payload)
     if response.status_code == 200:
         return response.json()["chat_history"]
     else:
         st.error("Unable to load chat history")
         return []
 
-def chat_window(token):
-    st.title("ChatBot")
-
-    # Check if a chat is selected
-    if "selected_chat_id" in st.session_state:
-        chat_id = st.session_state["selected_chat_id"]
-        chat_history = load_chat_history(chat_id, token)
-
-        # Display chat history
-        for chat in chat_history:
-            st.write(f"**{chat['role']}**: {chat['content']}")
+def load_chats():
+    print(f"load_chats Logged in user ID: {st.session_state['user_id']}")
+    payload = {"user_id": st.session_state["user_id"]}
+    response = requests.post(f"{BASE_URL}/chats", json=payload)
+    if response.status_code == 200:
+        chats = response.json()
+        print(f"Received {len(chats)} chats")
+        # Sort chats by createdAt in descending order
+        chats.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
+        return chats
     else:
-        # Show button to create a new chat
-        if st.button("Start New Chat"):
-            # Initialize a new chat ID (you may need to create a new chat in the backend)
-            # For this example, we'll just set a placeholder for the chat ID
-            st.session_state["selected_chat_id"] = "new_chat_id"  # This should be replaced with the actual creation logic
-            st.session_state["chat_history"] = []  # Initialize empty chat history
-            st.success("New chat started! You can start chatting now.")
-    
-    # Handle new messages
-    prompt = st.chat_input("Ask me anything...")
-    
-    if prompt:
-        new_chat = {"role": "user", "content": prompt}
-        if "chat_history" in st.session_state:
-            st.session_state["chat_history"].append(new_chat)
+        st.error(f"Unable to fetch chats. Status code: {response.status_code}")
+        print(f"Failed to fetch chats. Status code: {response.status_code}")
+        return []
 
-        response = requests.post(f"http://localhost:5000/chats/{st.session_state['selected_chat_id']}", json={"prompt": prompt}, headers={"user_id": token})
-        if response.status_code == 200:
-            assistant_message = response.json()["assistant_message"]
-            st.session_state["chat_history"].append({"role": "assistant", "content": assistant_message})
-            st.write(f"**Assistant**: {assistant_message}")
+def chat_window():
+    st.title("ChatBot")
+    print(f"chat_window Logged in user ID: {st.session_state['user_id']}")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    if "selected_chat_id" in st.session_state and st.session_state["selected_chat_id"] != "new_chat":
+        chat_id = st.session_state["selected_chat_id"]
+        st.session_state.messages = load_chat_history(chat_id)
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("What is your question?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        print(f"Sending message for user_id: {st.session_state['user_id']}")
+        if "selected_chat_id" in st.session_state and st.session_state["selected_chat_id"] != "new_chat":
+            response = requests.post(
+                f"{BASE_URL}/chats/{st.session_state['selected_chat_id']}/messages",
+                json={"prompt": prompt, "user_id": st.session_state["user_id"]}
+            )
         else:
-            st.error("Error sending message")
+            response = requests.post(
+                f"{BASE_URL}/createchat",
+                json={"prompt": prompt, "user_id": st.session_state["user_id"]},
+            )
+        
+        if response.status_code in [200, 201]:
+            data = response.json()
+            if "chat_id" in data:
+                st.session_state["selected_chat_id"] = data["chat_id"]
+            with st.chat_message("assistant"):
+                st.markdown(data['assistant_message'])
+            st.session_state.messages.append({"role": "assistant", "content": data['assistant_message']})
+            print(f"Received response for chat_id: {st.session_state['selected_chat_id']}")
+        else:
+            st.error(f"Error sending message. Status code: {response.status_code}")
+            print(f"Failed to send message. Status code: {response.status_code}")
+
+
