@@ -1,0 +1,7 @@
+openai
+bcrypt
+pymongo
+jwt
+flask
+python-dotenv
+flask-cors
