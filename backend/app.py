@@ -29,7 +29,7 @@ CORS(app)
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["chat_app"]
 auth_service = AuthService(db)
-llm_service = LLMService(provider="openai")
+llm_service = LLMService(provider="gemini")
 stats_service = StatsService(db)
 chat_service = ChatService(db, llm_service=llm_service, stats_service=stats_service)
 

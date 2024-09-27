@@ -5,8 +5,10 @@ from openai import OpenAI
 from anthropic import Anthropic
 import os
 from dotenv import load_dotenv
+import vertexai
+from vertexai.generative_models import GenerationConfig, GenerativeModel
 
-LLMProviders = Literal["openai", "anthropic", "ollama"]
+LLMProviders = Literal["openai", "anthropic", "ollama", "gemini"]
 
 class LLMSettings(BaseModel):
     api_key: str
@@ -14,6 +16,8 @@ class LLMSettings(BaseModel):
     temperature: float = 0.0
     max_tokens: int | None = None
     max_retries: int = 3
+    project_id: str | None = None
+    location: str | None = None
 
 class LLMService:
     def __init__(self, provider: LLMProviders):
@@ -47,6 +51,16 @@ class LLMService:
                 max_tokens=None,
                 max_retries=3
             )
+        elif self.provider == "gemini":
+            return LLMSettings(
+                api_key=os.getenv("GOOGLE_API_KEY", ""),
+                default_model="gemini-1.5-pro",
+                temperature=0.0,
+                max_tokens=None,
+                max_retries=3,
+                project_id=os.getenv("GOOGLE_PROJECT_ID", "284383182270"),
+                location=os.getenv("GOOGLE_LOCATION", "us-central1")
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
 
@@ -60,23 +74,42 @@ class LLMService:
         elif self.provider == "ollama":
             client = OpenAI(base_url="http://localhost:11434/v1", api_key=self.settings.api_key)
             return instructor.patch(client)
+        elif self.provider == "gemini":
+            vertexai.init(project=self.settings.project_id, location=self.settings.location)
+            return GenerativeModel(self.settings.default_model)
         else:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
 
     def get_llm_response(self, messages: list[Dict[str, str]], model: str | None = None, **kwargs: Any) -> Dict[str, Any]:
-        completion_params = {
-            "model": model or self.settings.default_model,
-            "temperature": kwargs.get("temperature", self.settings.temperature),
-            "max_retries": kwargs.get("max_retries", self.settings.max_retries),
-            "max_tokens": kwargs.get("max_tokens", self.settings.max_tokens),
-            "messages": messages,
-        }
+        if self.provider == "gemini":
+            return self._get_gemini_response(messages, model, **kwargs)
+        else:
+            completion_params = {
+                "model": model or self.settings.default_model,
+                "temperature": kwargs.get("temperature", self.settings.temperature),
+                "max_retries": kwargs.get("max_retries", self.settings.max_retries),
+                "max_tokens": kwargs.get("max_tokens", self.settings.max_tokens),
+                "messages": messages,
+            }
+            response = self.client.chat.completions.create(**completion_params)
+            return self._serialize_response(response)
 
-        response = self.client.chat.completions.create(**completion_params)
-        return self._serialize_response(response)
+    def _get_gemini_response(self, messages: list[Dict[str, str]], model: str | None = None, **kwargs: Any) -> Dict[str, Any]:
+        prompt = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
+        generation_config = GenerationConfig(
+            temperature=kwargs.get("temperature", self.settings.temperature),
+            max_output_tokens=kwargs.get("max_tokens", self.settings.max_tokens),
+            top_p=1.0,
+            top_k=32,
+        )
+        response = self.client.generate_content(
+            prompt,
+            generation_config=generation_config,
+        )
+        return self._serialize_gemini_response(response)
 
     def _serialize_response(self, response: Any) -> Dict[str, Any]:
-        # This is a simplified version and may need to be adapted for each provider
+        # This remains unchanged for other providers
         return {
             "id": getattr(response, "id", None),
             "created": getattr(response, "created", None),
@@ -97,6 +130,24 @@ class LLMService:
                 "completion_tokens": getattr(response.usage, "completion_tokens", None),
                 "total_tokens": getattr(response.usage, "total_tokens", None)
             } if hasattr(response, "usage") else None
+        }
+
+    def _serialize_gemini_response(self, response: Any) -> Dict[str, Any]:
+        return {
+            "id": None,  # Gemini doesn't provide an id
+            "created": None,  # Gemini doesn't provide a creation timestamp
+            "model": self.settings.default_model,
+            "choices": [
+                {
+                    "finish_reason": None,  # Gemini doesn't provide a finish reason
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": response.text
+                    }
+                }
+            ],
+            "usage": None  # Gemini doesn't provide token usage information
         }
 
     def generate_summary(self, chat_history: list[Dict[str, str]]) -> Dict[str, Any]:
