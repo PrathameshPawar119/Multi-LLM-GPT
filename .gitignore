@@ -1,6 +1,6 @@
 /backend/_pycache_
 /backend/venv
-/.env
+/backend/.env
 
 /frontend/_pycache_
 /frontend/venv
