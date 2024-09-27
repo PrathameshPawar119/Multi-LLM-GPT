@@ -3,6 +3,7 @@ from flask_cors import CORS
 from auth import AuthService
 from chat import ChatService
 from openaipy import OpenAIService
+from StatService import StatsService
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson import ObjectId
@@ -28,8 +29,9 @@ CORS(app)
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["chat_app"]
 auth_service = AuthService(db)
-chat_service = ChatService(db)
 openai_service = OpenAIService()
+stats_service = StatsService(db)
+chat_service = ChatService(db, openai_service=openai_service, stats_service=stats_service)
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -52,7 +54,7 @@ def get_chats():
     
     print(f"Retrieving chats for user_id: {user_id}")
     chats = chat_service.get_user_chats(user_id)
-    print(f"Retrieved {len(chats)} chats")
+    print(f"Retrieved {len(chats)} chats", chats)
     
     return jsonify(chats)
 
@@ -62,17 +64,20 @@ def create_chat():
     user_id = data.get('user_id')
     print(f"Creating new chat for user_id: {user_id}")
     messages = [{"role": "user", "content": data['prompt']}]
-    assistant_response = openai_service.get_openai_response(messages)
+    response = openai_service.get_openai_response(messages)
     
+    assistant_message = response['choices'][0]['message']['content']
     chat_history = [
         {"role": "user", "content": data['prompt']},
-        {"role": "assistant", "content": assistant_response}
+        {"role": "assistant", "content": assistant_message}
     ]
     
     chat_id = chat_service.save_chat(user_id, chat_history)
+    # stats_service.save_api_usage(user_id, chat_id, response)
+    # stats_service.update_user_stats(user_id, response)
     print(f"Created new chat with id: {chat_id}")
     
-    return jsonify({"chat_id": str(chat_id), "assistant_message": assistant_response}), 201
+    return jsonify({"chat_id": str(chat_id), "assistant_message": assistant_message}), 201
 
 @app.route('/chats/<chat_id>', methods=['GET'])
 def get_chat(chat_id):
@@ -83,20 +88,39 @@ def get_chat(chat_id):
 def add_message(chat_id):
     data = request.json
     user_id = data.get('user_id')
+    user_message = data.get('prompt')
     
     chat = chat_service.get_chat_by_id(chat_id)
     if not chat:
         return jsonify({"message": "Chat not found"}), 404
     
-    chat_history = chat['chat_history']
-    chat_history.append({"role": "user", "content": data['prompt']})
+    # Get chat context, which may be full chat history or summary + recent messages
+    context = chat_service.get_context_for_chat(chat_id)
+    context.append({"role": "user", "content": user_message})
+
+    response = openai_service.get_openai_response(context)
+    print("\n Token details from add_message: ", response)
     
-    assistant_response = openai_service.get_openai_response(chat_history)
-    chat_history.append({"role": "assistant", "content": assistant_response})
+    if isinstance(response, tuple) and response[1] is None:
+        # This means there was an error
+        return jsonify({"error": response[0]}), 500
     
-    chat_service.update_chat(chat_id, chat_history)
-    
-    return jsonify({"chat_id": chat_id, "assistant_message": assistant_response}), 200
+    assistant_message = response['choices'][0]['message']['content']
+
+    new_user_message = {"role": "user", "content": user_message}
+    new_assistant_message = {"role": "assistant", "content": assistant_message}
+
+    # Update chat with new messages and, if applicable, update the summary
+    summary, updated_chat_history = chat_service.update_chat(chat_id, new_user_message, new_assistant_message, user_id=user_id, token_details=response)
+    stats_service.save_api_usage(user_id, chat_id, response)
+
+    return jsonify({
+        "chat_id": chat_id,
+        "assistant_message": assistant_message,
+        "summary": summary,
+        "chat_history": updated_chat_history
+    }), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
