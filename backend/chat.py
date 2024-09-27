@@ -4,9 +4,9 @@ from bson import ObjectId
 class ChatService:
     SUMMARY_THRESHOLD = 3
 
-    def __init__(self, db, openai_service, stats_service):
+    def __init__(self, db, llm_service, stats_service):
         self.db = db
-        self.openai_service = openai_service
+        self.llm_service = llm_service
         self.stats_service = stats_service
 
     def _serialize_object_id(self, obj):
@@ -49,14 +49,14 @@ class ChatService:
 
         # Update summary after every SUMMARY_THRESHOLD interactions
         if message_count == self.SUMMARY_THRESHOLD * 2:  # each interaction has 2 messages
-            summary_response = self.openai_service.generate_summary(chat_history)
+            summary_response = self.llm_service.generate_summary(chat_history)
             if 'error' in summary_response:
                 print(f"Error generating summary: {summary_response['error']}")
                 summary = "Error generating summary"
             else:
                 summary = summary_response['choices'][0]['message']['content']
         elif message_count > self.SUMMARY_THRESHOLD * 2:
-            summary_response = self.openai_service.update_summary(summary, [new_user_message, new_assistant_message])
+            summary_response = self.llm_service.update_summary(summary, [new_user_message, new_assistant_message])
             if 'error' in summary_response:
                 print(f"Error updating summary: {summary_response['error']}")
                 # Keep the old summary if there's an error

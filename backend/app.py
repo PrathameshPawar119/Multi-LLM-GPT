@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from auth import AuthService
 from chat import ChatService
-from openaipy import OpenAIService
+from LLMServices import LLMService
 from StatService import StatsService
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -29,9 +29,9 @@ CORS(app)
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["chat_app"]
 auth_service = AuthService(db)
-openai_service = OpenAIService()
+llm_service = LLMService(provider="openai")
 stats_service = StatsService(db)
-chat_service = ChatService(db, openai_service=openai_service, stats_service=stats_service)
+chat_service = ChatService(db, llm_service=llm_service, stats_service=stats_service)
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -64,7 +64,7 @@ def create_chat():
     user_id = data.get('user_id')
     print(f"Creating new chat for user_id: {user_id}")
     messages = [{"role": "user", "content": data['prompt']}]
-    response = openai_service.get_openai_response(messages)
+    response = llm_service.get_llm_response(messages)
     
     assistant_message = response['choices'][0]['message']['content']
     chat_history = [
@@ -73,8 +73,8 @@ def create_chat():
     ]
     
     chat_id = chat_service.save_chat(user_id, chat_history)
-    # stats_service.save_api_usage(user_id, chat_id, response)
-    # stats_service.update_user_stats(user_id, response)
+    stats_service.save_api_usage(user_id, chat_id, response)
+    stats_service.update_user_stats(user_id, response)
     print(f"Created new chat with id: {chat_id}")
     
     return jsonify({"chat_id": str(chat_id), "assistant_message": assistant_message}), 201
@@ -98,7 +98,7 @@ def add_message(chat_id):
     context = chat_service.get_context_for_chat(chat_id)
     context.append({"role": "user", "content": user_message})
 
-    response = openai_service.get_openai_response(context)
+    response = llm_service.get_llm_response(context)
     print("\n Token details from add_message: ", response)
     
     if isinstance(response, tuple) and response[1] is None:
