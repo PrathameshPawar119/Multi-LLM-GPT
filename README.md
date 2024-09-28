@@ -6,12 +6,11 @@ A versatile chat application leveraging multiple Language Learning Models (LLMs)
 - [Features](#features)
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
-- [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
 - [Contributing](#contributing)
-- [License](#license)
+- [Installation](#installation)
 - [Contact](#contact)
 
 ## Features
@@ -71,54 +70,25 @@ ChatGPT/
 - `frontend/`: Streamlit-based user interface
 - `admin/`: Admin dashboard for analytics
 - `.env`: Environment variables configuration
-- `run.py`: Application entry point
-
-## Installation
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/multillm-chat-platform.git
-   cd multillm-chat-platform
-   ```
-
-2. Set up a virtual environment:
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
-
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. Set up environment variables:
-   ```
-   cp .env.example .env
-   ```
-   Edit `.env` with your API keys and configuration.
+- 
 
 ## Configuration
 
 1. LLM API Keys:
-   Add your API keys to the `.env` file:
+   Add your API keys to the backend/ `.env` file:
    ```
    OPENAI_API_KEY=your_openai_key
    ANTHROPIC_API_KEY=your_anthropic_key
    GOOGLE_API_KEY=your_google_key
-   ```
-
-2. MongoDB Configuration:
-   Set your MongoDB URI in the `.env` file:
-   ```
    MONGODB_URI=your_mongodb_uri
    ```
+   
 
 ## Usage
 
 1. Start the Flask backend:
    ```
-   python run.py
+   flask run
    ```
 
 2. Launch the Streamlit frontend:
@@ -161,9 +131,84 @@ We welcome contributions to the MultiLLM Chat Platform!
 
 Please ensure your code adheres to our coding standards and includes appropriate tests.
 
-## License
+## Installation and Running
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Each component (backend2, frontend, and Admin) has its own `requirements.txt` file and can be run independently. Note that you can run either the frontend or Admin component at a time on your local machine, alongside the backend.
+
+### Backend
+
+1. Navigate to the backend2 directory:
+   ```
+   cd backend2
+   ```
+
+2. Create and activate a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Set up environment variables:
+   ```
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. Run the Flask server:
+   ```
+   python run.py
+   ```
+
+### Frontend
+
+1. Open a new terminal and navigate to the frontend directory:
+   ```
+   cd frontend
+   ```
+
+2. Create and activate a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Run the Streamlit app:
+   ```
+   streamlit run app.py
+   ```
+
+### Admin Dashboard
+
+1. Open a new terminal and navigate to the Admin directory:
+   ```
+   cd Admin
+   ```
+
+2. Create and activate a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Run the Admin Streamlit app:
+   ```
+   streamlit run app.py
+   ```
 
 ## Contact
 
