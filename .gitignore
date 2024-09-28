@@ -1,8 +1,11 @@
-/backend/_pycache_
-/backend/venv
-/backend/.env
 
 /frontend/_pycache_
 /frontend/venv
 
 /Admin/venv
+/Admin/_pycache_
+
+
+/backend2/_pycache_
+/backend2/venv
+/backend2/.env

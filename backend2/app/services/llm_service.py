@@ -84,6 +84,7 @@ class LLMService:
         if self.provider == "gemini":
             return self._get_gemini_response(messages, model, **kwargs)
         else:
+            print("\n message sending to llm: \n", messages)
             completion_params = {
                 "model": model or self.settings.default_model,
                 "temperature": kwargs.get("temperature", self.settings.temperature),
@@ -92,10 +93,13 @@ class LLMService:
                 "messages": messages,
             }
             response = self.client.chat.completions.create(**completion_params)
+            print("\n response from llm: \n", response)
             return self._serialize_response(response)
 
     def _get_gemini_response(self, messages: list[Dict[str, str]], model: str | None = None, **kwargs: Any) -> Dict[str, Any]:
         prompt = "\n".join([f"{msg['role']}: {msg['content']}" for msg in messages])
+
+        print("\n message sending to llm: \n", messages)
         generation_config = GenerationConfig(
             temperature=kwargs.get("temperature", self.settings.temperature),
             max_output_tokens=kwargs.get("max_tokens", self.settings.max_tokens),
@@ -106,6 +110,7 @@ class LLMService:
             prompt,
             generation_config=generation_config,
         )
+        print("\n response from llm: \n", response)
         return self._serialize_gemini_response(response)
 
     def _serialize_response(self, response: Any) -> Dict[str, Any]:

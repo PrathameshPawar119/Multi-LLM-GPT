@@ -87,5 +87,5 @@ class ChatService:
         if chat['message_count'] <= self.SUMMARY_THRESHOLD * 2:
             return chat['chat_history']
         else:
-            # After threshold is met, return summary + last two interactions
-            return [{"role": "system", "content": chat['summary']}] + chat['chat_history'][-4:]
+            # After threshold is met, return summary + last 1 interactions
+            return [{"role": "system", "content": chat['summary']}] + chat['chat_history'][-2:]
