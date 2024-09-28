@@ -32,19 +32,36 @@ A versatile chat application leveraging multiple Language Learning Models (LLMs)
 ## Project Structure
 
 ```
-your_project/
-├── app/
-│   ├── __init__.py
-│   ├── routes/
-│   ├── services/
-│   ├── utils/
-├── .env
+ChatGPT/
+├── Admin/
+│   ├── app.py
+│   └── requirements.txt
+├── backend2/
+│   ├── app/
+│   │   ├── routes/
+│   │   │   ├── auth_routes.py
+│   │   │   ├── chat_routes.py
+│   │   │   └── user_routes.py
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   ├── chat_service.py
+│   │   │   ├── llm_service.py
+│   │   │   └── stat_service.py
+│   │   └── utils/
+│   ├── init.py
+│   ├── .env
+│   ├── .env.example
+│   ├── requirements.txt
+│   └── run.py
 ├── frontend/
 │   ├── components/
-│   ├── pages/
-├── admin/
-├── run.py
-└── requirements.txt
+│   │   ├── auth.py
+│   │   ├── chats.py
+│   │   └── sidebar.py
+│   ├── app.py
+│   └── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
 - `app/`: Core backend logic
