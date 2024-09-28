@@ -2,7 +2,13 @@
 
 A versatile chat application leveraging multiple Language Learning Models (LLMs) (Using Factory Pattern) with a Flask backend and Streamlit frontend. This platform offers seamless integration with various LLM providers, user authentication, chat history management, and comprehensive usage analytics.
 
+
 https://github.com/user-attachments/assets/73817e40-9526-49d9-bb1c-93dd3071c1df
+
+
+
+https://github.com/user-attachments/assets/0ac625a5-ec82-46b9-990a-07400164f89f
+
 
 
 ## Table of Contents
