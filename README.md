@@ -38,11 +38,11 @@ your_project/
 │   ├── routes/
 │   ├── services/
 │   ├── utils/
+├── .env
 ├── frontend/
 │   ├── components/
 │   ├── pages/
 ├── admin/
-├── .env
 ├── run.py
 └── requirements.txt
 ```
