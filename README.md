@@ -2,6 +2,9 @@
 
 A versatile chat application leveraging multiple Language Learning Models (LLMs) with a Flask backend and Streamlit frontend. This platform offers seamless integration with various LLM providers, user authentication, chat history management, and comprehensive usage analytics.
 
+https://github.com/user-attachments/assets/73817e40-9526-49d9-bb1c-93dd3071c1df
+
+
 ## Table of Contents
 - [Features](#features)
 - [Technology Stack](#technology-stack)
