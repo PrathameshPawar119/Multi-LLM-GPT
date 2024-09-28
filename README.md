@@ -161,7 +161,7 @@ Each component (backend2, frontend, and Admin) has its own `requirements.txt` fi
 
 5. Run the Flask server:
    ```
-   python run.py
+   flask run
    ```
 
 ### Frontend
@@ -212,7 +212,7 @@ Each component (backend2, frontend, and Admin) has its own `requirements.txt` fi
 
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_twitter) - email@example.com
+Prathamesh Pawar - prathameshpawar28788@gmail.com
 
-Project Link: [https://github.com/yourusername/multillm-chat-platform](https://github.com/yourusername/multillm-chat-platform)
+Project Link: https://github.com/PrathameshPawar119/Multi-LLM-GPT
 
